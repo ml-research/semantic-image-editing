@@ -24,7 +24,7 @@ The ```SemanticEditPipeline``` extends the ```StableDiffusionPipeline``` and can
 
 
 ```python
-from sem_diffusers import SemanticEditPipeline
+from semdiffusers import SemanticEditPipeline
 device='cuda'
 
 pipe = SemanticEditPipeline.from_pretrained(
