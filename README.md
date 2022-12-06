@@ -3,7 +3,7 @@
 Official Implementation of the [Paper](http://arxiv.org/) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space**
 
 ## Interactive Demo
-An interactive demonstration is available in Colab [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)]([https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/TheStableArtist.ipynb](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/TheStableArtist.ipynb)).
+An interactive demonstration is available in Colab [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/TheStableArtist.ipynb)
 
 ## Installation
 You can either clone the repository and install it locally by running
