@@ -1,6 +1,6 @@
 # Semantic Image Editing for Latent Diffusion
 
-Official Implementation of the [Paper](http://arxiv.org/) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space**
+Official Implementation of the [Paper](http://arxiv.org/abs/2212.06013) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space**
 
 ## Interactive Demo
 An interactive demonstration is available in Colab [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/TheStableArtist.ipynb)
@@ -62,7 +62,7 @@ If you like or use our work please cite us:
       title={The Stable Artist: Interacting with Concepts in Diffusion Latent Space}, 
       author={Manuel Brack and Patrick Schramowski and Felix Friedrich and Kristian Kersting},
       year={2022},
-      journal={arXiv preprint arXiv:XXX.XXX}
+      journal={arXiv preprint arXiv:2212.06013}
 }
 ```
 
