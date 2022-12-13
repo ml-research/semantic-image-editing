@@ -59,7 +59,7 @@ out.images[0]
 If you like or use our work please cite us:
 ```bibtex
 @article{brack2022Stable,
-      title={The Stable Artist: Interacting with Concepts in Diffusion Latent Space}, 
+      title={The Stable Artist: Steering Semantics in Diffusion Latent Space}, 
       author={Manuel Brack and Patrick Schramowski and Felix Friedrich and Kristian Kersting},
       year={2022},
       journal={arXiv preprint arXiv:2212.06013}
