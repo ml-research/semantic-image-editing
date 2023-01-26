@@ -37,21 +37,21 @@ An exemplary usage of the pipeline could look like this:
 import torch
 gen = torch.Generator(device=device)
 
-gen.manual_seed(48)
-out = pipe(prompt='a castle next to a river', generator=gen, num_images_per_prompt=1, guidance_scale=7, 
-          editing_prompt=[                                    # Concepts to apply
-                    'oil painting, drawing', 
-                    'medieval bridge',
-                    'boat on a river, boat'],
-           reverse_editing_direction=[False, False, False],   # Direction of guidance
-           edit_warmup_steps=[20, 10, 11],                    # Warmup period for each concept
-           edit_guidance_scale=[2000, 2000, 2000],            # Guidance scale for each concept
-           edit_threshold=[-0.2, -0.1, -0.1],                 # Threshold for each concept. Note that positive guidance needs negative thresholds and vice versa
-           edit_weights=[1.2,1,1],                            # Weights of the individual concepts against each other
-           edit_momentum_scale=0.25,                          # Momentum scale that will be added to the latent guidance
-           edit_mom_beta=0.6,                                 # Momentum beta
-           )
-out.images[0]
+gen.manual_seed(21)
+out = pipe(prompt='a photo of the face of a woman', generator=gen, num_images_per_prompt=1, guidance_scale=7,
+           editing_prompt=['smiling, smile',       # Concepts to apply 
+                           'glasses, wearing glasses', 
+                           'curls, wavy hair, curly hair', 
+                           'beard, full beard, mustache'],
+           reverse_editing_direction=[False, False, False, False], # Direction of guidance i.e. increase all concepts
+           edit_warmup_steps=[10, 10, 10,10], # Warmup period for each concept
+           edit_guidance_scale=[4, 5, 5, 5.4], # Guidance scale for each concept
+           edit_threshold=[0.99, 0.975, 0.925, 0.96], # Threshold for each concept. Threshold equals the percentile of the latent space that will be discarded. I.e. threshold=0.99 uses 1% of the latent dimensions
+           edit_momentum_scale=0.3, # Momentum scale that will be added to the latent guidance
+           edit_beta1=0.6, # Momentum beta
+           edit_weights=[1,1,1,1,1] # Weights of the individual concepts against each other
+          )
+images = out.images
 
 ```
 

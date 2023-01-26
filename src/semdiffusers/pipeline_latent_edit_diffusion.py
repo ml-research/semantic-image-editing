@@ -144,11 +144,12 @@ class SemanticEditPipeline(DiffusionPipeline):
         reverse_editing_direction: Optional[Union[bool, List[bool]]] = False,
         edit_guidance_scale: Optional[Union[float, List[float]]] = 500,
         edit_warmup_steps: Optional[Union[int, List[int]]] = 10,
+        edit_cooldown_steps: Optional[Union[int, List[int]]] = None,
         edit_threshold: Optional[Union[float, List[float]]] = None,
         edit_momentum_scale: Optional[float] = 0.1,
         edit_mom_beta: Optional[float] = 0.4,
         edit_weights: Optional[List[float]] = None,
-
+        sem_guidance = None,
         **kwargs,
     ):
         r"""
@@ -198,29 +199,27 @@ class SemanticEditPipeline(DiffusionPipeline):
                 The frequency at which the `callback` function will be called. If not specified, the callback will be
                 called at every step.
             editing_prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts to use for latent guidance. Latent guidance is disabled by setting
+                The prompt or prompts to use for Semantic guidance. Semantic guidance is disabled by setting
                 `editing_prompt = None`. Guidance direction of prompt should be specified via
                 `reverse_editing_direction`.
             reverse_editing_direction (`bool` or `List[bool]`, *optional*):
                 Whether the corresponding prompt in `editing_prompt` should be increased or decreased.
-            edit_guidance_scale (`float` or `List[float]`, *optional*, defaults to 500):
-                Guidance scale for latent guidance. If provided as list values should correspond to `editing_prompt`.
+            edit_guidance_scale (`float` or `List[float]`, *optional*, defaults to 5):
+                Guidance scale for semantic guidance. If provided as list values should correspond to `editing_prompt`.
             edit_warmup_steps (`float` or `List[float]`, *optional*, defaults to 10):
-                Number of diffusion steps (for each prompt) for which latent guidance will not be applied. Momentum
+                Number of diffusion steps (for each prompt) for which semantic guidance will not be applied. Momentum
                 will still be calculated for those steps and applied once all warmup periods are over.
+            edit_cooldown_steps (`float` or `List[float]`, *optional*, defaults to 10):
+                Number of diffusion steps (for each prompt) after which semantic guidance will no longer be applied.
             edit_threshold (`float` or `List[float]`, *optional*, defaults to `None`):
-                Threshold that separates the hyperplane between image content that should be changed or not.
-                 Parameter is only optional if latent guidance is disabled, i.e.
-                `editing_prompt = None`. Guidance moving towards the specified `editing_prompt` should use a negative
-                `edit_threshold`, whereas negative guided prompts (i.e. `reverse_editing_direction = True `) should use
-                positive thresholds.
+                Threshold of semantic guidance.
             edit_momentum_scale (`float`, *optional*, defaults to 0.1):
-                Scale of the momentum to be added to the latent guidance at each diffusion step. If set to 0.0 momentum
+                Scale of the momentum to be added to the semantic guidance at each diffusion step. If set to 0.0 momentum
                 will be disabled. Momentum is already built up during warmup, i.e. for diffusion steps smaller than
                 `sld_warmup_steps`. Momentum will only be added to latent guidance once all warmup periods are
                 finished.
             edit_mom_beta (`float`, *optional*, defaults to 0.4):
-                Defines how latent guidance momentum builds up. `edit_mom_beta` indicates how much of the previous
+                Defines how semantic guidance momentum builds up. `edit_mom_beta` indicates how much of the previous
                 momentum will be kept. Momentum is already built up during warmup, i.e. for diffusion steps smaller
                 than `edit_warmup_steps`.
             edit_weights (`List[float]`, *optional*, defaults to `None`):
@@ -313,7 +312,7 @@ class SemanticEditPipeline(DiffusionPipeline):
                     edit_concepts_input_ids = edit_concepts_input_ids[:, : self.tokenizer.model_max_length]
                 edit_concepts = self.text_encoder(edit_concepts_input_ids.to(self.device))[0]
             else:
-                edit_concepts = editing_prompt_prompt_embeddings.to(self.device)
+                edit_concepts = editing_prompt_prompt_embeddings.to(self.device).repeat(batch_size, 1, 1)
 
             # duplicate text embeddings for each generation per prompt, using mps friendly method
             bs_embed_edit, seq_len_edit, _ = edit_concepts.shape
@@ -325,6 +324,8 @@ class SemanticEditPipeline(DiffusionPipeline):
         # corresponds to doing no classifier free guidance.
         do_classifier_free_guidance = guidance_scale > 1.0
         # get unconditional embeddings for classifier free guidance
+
+
         if do_classifier_free_guidance:
             uncond_tokens: List[str]
             if negative_prompt is None:
@@ -409,6 +410,11 @@ class SemanticEditPipeline(DiffusionPipeline):
         # Initialize edit_momentum to None
         edit_momentum = None
 
+        self.uncond_estimates = None
+        self.text_estimates = None
+        self.edit_estimates = None
+        self.sem_guidance = None
+
         for i, t in enumerate(self.progress_bar(timesteps_tensor)):
             # expand the latents if we are doing classifier free guidance
             latent_model_input = (
@@ -426,13 +432,28 @@ class SemanticEditPipeline(DiffusionPipeline):
                 noise_pred_edit_concepts = noise_pred_out[2:]
 
                 # default text guidance
-                noise_guidance = noise_pred_text - noise_pred_uncond
+                noise_guidance = guidance_scale * (noise_pred_text - noise_pred_uncond)
                 # noise_guidance = (noise_pred_text - noise_pred_edit_concepts[0])
+
+                if self.uncond_estimates is None:
+                    self.uncond_estimates = torch.zeros((num_inference_steps+1, *noise_pred_uncond.shape))
+                self.uncond_estimates[i] = noise_pred_uncond.detach().cpu()
+
+                if self.text_estimates is None:
+                    self.text_estimates = torch.zeros((num_inference_steps+1, *noise_pred_text.shape))
+                self.text_estimates[i] = noise_pred_text.detach().cpu()
+
+                if self.edit_estimates is None and enable_edit_guidance:
+                    self.edit_estimates = torch.zeros((num_inference_steps+1, len(noise_pred_edit_concepts), *noise_pred_edit_concepts[0].shape))
+
+                if self.sem_guidance is None:
+                    self.sem_guidance = torch.zeros((num_inference_steps + 1, *noise_pred_text.shape))
 
                 if edit_momentum is None:
                     edit_momentum = torch.zeros_like(noise_guidance)
 
                 if enable_edit_guidance:
+
                     concept_weights = torch.zeros(
                         (len(noise_pred_edit_concepts), noise_guidance.shape[0]), device=self.device
                     )
@@ -442,6 +463,7 @@ class SemanticEditPipeline(DiffusionPipeline):
                     # noise_guidance_edit = torch.zeros_like(noise_guidance)
                     warmup_inds = []
                     for c, noise_pred_edit_concept in enumerate(noise_pred_edit_concepts):
+                        self.edit_estimates[i, c] = noise_pred_edit_concept
                         if isinstance(edit_guidance_scale, list):
                             edit_guidance_scale_c = edit_guidance_scale[c]
                         else:
@@ -463,39 +485,37 @@ class SemanticEditPipeline(DiffusionPipeline):
                             edit_warmup_steps_c = edit_warmup_steps[c]
                         else:
                             edit_warmup_steps_c = edit_warmup_steps
+
+                        if isinstance(edit_cooldown_steps, list):
+                            edit_cooldown_steps_c = edit_cooldown_steps[c]
+                        elif edit_cooldown_steps is None:
+                            edit_cooldown_steps_c = i + 1
+                        else:
+                            edit_cooldown_steps_c = edit_cooldown_steps
                         if i >= edit_warmup_steps_c:
                             warmup_inds.append(c)
+                        if i >= edit_cooldown_steps_c:
+                            noise_guidance_edit[c, :, :, :, :] = torch.zeros_like(noise_pred_edit_concept)
+                            continue
 
-                        # check sign and scale.
-                        scale = torch.clamp(
-                            (1 / torch.abs((noise_pred_text - noise_pred_edit_concept))) * edit_guidance_scale_c, max=1.0
-                        )
-
-                        if reverse_editing_direction_c:
-                            edit_concept_scale = torch.where(
-                                (noise_pred_text - noise_pred_edit_concept) >= edit_threshold_c,
-                                torch.zeros_like(scale),
-                                scale,
-                            )
-                        else:
-                            edit_concept_scale = torch.where(
-                                (noise_pred_text - noise_pred_edit_concept) <= edit_threshold_c,
-                                torch.zeros_like(scale),
-                                scale,
-                            )
-
-                        noise_guidance_edit_tmp = torch.mul(
-                            (noise_pred_edit_concept - noise_pred_uncond), edit_concept_scale
-                        )
-
+                        noise_guidance_edit_tmp = noise_pred_edit_concept - noise_pred_uncond
                         # tmp_weights = (noise_pred_text - noise_pred_edit_concept).sum(dim=(1, 2, 3))
                         tmp_weights = (noise_guidance - noise_pred_edit_concept).sum(dim=(1, 2, 3))
 
-                        tmp_weights = torch.full_like(tmp_weights, edit_weight_c) * (1 / enabled_editing_prompts)
+                        tmp_weights = torch.full_like(tmp_weights, edit_weight_c) #* (1 / enabled_editing_prompts)
                         if reverse_editing_direction_c:
                             noise_guidance_edit_tmp = noise_guidance_edit_tmp * -1
                         concept_weights[c, :] = tmp_weights
+
+                        noise_guidance_edit_tmp = noise_guidance_edit_tmp * edit_guidance_scale_c
+                        tmp = torch.quantile(torch.abs(noise_guidance_edit_tmp).flatten(start_dim=2), edit_threshold_c, dim=2, keepdim=False)
+                        noise_guidance_edit_tmp = torch.where(
+                            torch.abs(noise_guidance_edit_tmp) >= tmp[:, :, None, None]
+                            , noise_guidance_edit_tmp
+                            , torch.zeros_like(noise_guidance_edit_tmp)
+                        )
                         noise_guidance_edit[c, :, :, :, :] = noise_guidance_edit_tmp
+
 
                         # noise_guidance_edit = noise_guidance_edit + noise_guidance_edit_tmp
 
@@ -509,7 +529,7 @@ class SemanticEditPipeline(DiffusionPipeline):
                             concept_weights_tmp < 0, torch.zeros_like(concept_weights_tmp), concept_weights_tmp
                         )
                         concept_weights_tmp = concept_weights_tmp / concept_weights_tmp.sum(dim=0)
-                        concept_weights_tmp = torch.nan_to_num(concept_weights_tmp)
+                       # concept_weights_tmp = torch.nan_to_num(concept_weights_tmp)
 
                         noise_guidance_edit_tmp = torch.index_select(
                             noise_guidance_edit.to(self.device), 0, warmup_inds
@@ -517,8 +537,11 @@ class SemanticEditPipeline(DiffusionPipeline):
                         noise_guidance_edit_tmp = torch.einsum(
                             "cb,cbijk->bijk", concept_weights_tmp, noise_guidance_edit_tmp
                         )
-
+                        noise_guidance_edit_tmp = noise_guidance_edit_tmp
                         noise_guidance = noise_guidance + noise_guidance_edit_tmp
+
+                        self.sem_guidance[i] = noise_guidance_edit_tmp.detach().cpu()
+
                         del noise_guidance_edit_tmp
                         del concept_weights_tmp
                         concept_weights = concept_weights.to(self.device)
@@ -527,22 +550,23 @@ class SemanticEditPipeline(DiffusionPipeline):
                     concept_weights = torch.where(
                         concept_weights < 0, torch.zeros_like(concept_weights), concept_weights
                     )
-                    concept_weights = concept_weights / concept_weights.sum(dim=0)
+
                     concept_weights = torch.nan_to_num(concept_weights)
                     noise_guidance_edit = torch.einsum("cb,cbijk->bijk", concept_weights, noise_guidance_edit)
-                    # Increase safety guidance by scaled momentum
-                    # noise_guidance_edit = noise_guidance_edit.mean(dim=0)
 
                     noise_guidance_edit = noise_guidance_edit + edit_momentum_scale * edit_momentum
-                    # Calculate next momentum
+
                     edit_momentum = edit_mom_beta * edit_momentum + (1 - edit_mom_beta) * noise_guidance_edit
 
                     if warmup_inds.shape[0] == len(noise_pred_edit_concepts):
                         noise_guidance = noise_guidance + noise_guidance_edit
+                        self.sem_guidance[i] = noise_guidance_edit.detach().cpu()
 
-                # apply guidance
+                if sem_guidance is not None:
+                    edit_guidance = sem_guidance[i].to(self.device)
+                    noise_guidance = noise_guidance + edit_guidance
 
-                noise_pred = noise_pred_uncond + guidance_scale * noise_guidance
+                noise_pred = noise_pred_uncond + noise_guidance
 
                 # compute the previous noisy sample x_t -> x_t-1
             latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
