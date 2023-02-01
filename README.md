@@ -1,8 +1,8 @@
-# Semantic Image Editing for Latent Diffusion
+# Semantic Guidance for Diffusion
 
 Official Implementation of the [Paper](https://arxiv.org/abs/2301.12247) **SEGA: Instructing Diffusion using Semantic Dimensions**. 
 
-You may find the implementation of the previous [pre-print](http://arxiv.org/abs/2212.06013) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space** und the tag [StableArtist](https://github.com/ml-research/semantic-image-editing/tree/StableArtist).
+You may find the implementation of the previous [pre-print](http://arxiv.org/abs/2212.06013) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space** under the tag [StableArtist](https://github.com/ml-research/semantic-image-editing/tree/StableArtist).
 
 ## Interactive Demo
 An interactive demonstration is available in Colab [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/SemanticGuidance.ipynb)
