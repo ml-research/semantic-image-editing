@@ -7,6 +7,8 @@ You may find the implementation of the previous [pre-print](http://arxiv.org/abs
 ## Interactive Demo
 An interactive demonstration is available in Colab [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/SemanticGuidance.ipynb)
 
+![Examples(./examples/teaser.png)
+
 ## Installation
 You can either clone the repository and install it locally by running
 
