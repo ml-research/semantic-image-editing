@@ -1,9 +1,11 @@
 # Semantic Image Editing for Latent Diffusion
 
-Official Implementation of the [Paper](http://arxiv.org/abs/2212.06013) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space**
+Official Implementation of the [Paper](https://arxiv.org/abs/2301.12247) **SEGA: Instructing Diffusion using Semantic Dimensions**. 
+
+You may find the implementation of the previous [pre-print](http://arxiv.org/abs/2212.06013) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space** und the tag [StableArtist](https://github.com/ml-research/semantic-image-editing/tree/StableArtist).
 
 ## Interactive Demo
-An interactive demonstration is available in Colab [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/TheStableArtist.ipynb)
+An interactive demonstration is available in Colab [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/SemanticGuidance.ipynb)
 
 ## Installation
 You can either clone the repository and install it locally by running
@@ -58,11 +60,11 @@ images = out.images
 ## Citation
 If you like or use our work please cite us:
 ```bibtex
-@article{brack2022Stable,
-      title={The Stable Artist: Steering Semantics in Diffusion Latent Space}, 
-      author={Manuel Brack and Patrick Schramowski and Felix Friedrich and Kristian Kersting},
+@article{brack2022Sega,
+      title={SEGA: Instructing Diffusion using Semantic Dimensions}, 
+      author={Manuel Brack and Felix Friedrich and Dominik Hintersdorf and Lukas Struppek and Patrick Schramowski and Kristian Kersting},
       year={2022},
-      journal={arXiv preprint arXiv:2212.06013}
+      journal={arXiv preprint arXiv:2301.12247}
 }
 ```
 
