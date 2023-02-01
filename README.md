@@ -62,10 +62,10 @@ images = out.images
 ## Citation
 If you like or use our work please cite us:
 ```bibtex
-@article{brack2022Sega,
+@article{brack2023Sega,
       title={SEGA: Instructing Diffusion using Semantic Dimensions}, 
       author={Manuel Brack and Felix Friedrich and Dominik Hintersdorf and Lukas Struppek and Patrick Schramowski and Kristian Kersting},
-      year={2022},
+      year={2023},
       journal={arXiv preprint arXiv:2301.12247}
 }
 ```
