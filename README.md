@@ -1,4 +1,4 @@
-# Semantic Image Editing for Latent Diffusion
+# Semantic Guidance for Diffusion
 
 Official Implementation of the [Paper](https://arxiv.org/abs/2301.12247) **SEGA: Instructing Diffusion using Semantic Dimensions**. 
 
