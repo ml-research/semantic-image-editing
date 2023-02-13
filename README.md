@@ -5,7 +5,7 @@ Official Implementation of the [Paper](https://arxiv.org/abs/2301.12247) **SEGA:
 You may find the implementation of the previous [pre-print](http://arxiv.org/abs/2212.06013) **The Stable Artist: Interacting with Concepts in Diffusion Latent Space** under the tag [StableArtist](https://github.com/ml-research/semantic-image-editing/tree/StableArtist).
 
 ## Interactive Demo
-An interactive demonstration is available in Colab [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/SemanticGuidance.ipynb)
+An interactive demonstration is available in Colab and on Huggingface [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ml-research/semantic-image-editing/blob/main/examples/SemanticGuidance.ipynb) [![Huggingface Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/AIML-TUDA/semantic-diffusion)
 
 ![Examples](./examples/teaser.png)
 
