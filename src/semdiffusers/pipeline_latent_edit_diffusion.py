@@ -508,6 +508,10 @@ class SemanticEditPipeline(DiffusionPipeline):
                         concept_weights[c, :] = tmp_weights
 
                         noise_guidance_edit_tmp = noise_guidance_edit_tmp * edit_guidance_scale_c
+
+                        if latents_dtype not in [torch.float, torch.double]:
+                            noise_guidance_edit_tmp = noise_guidance_edit_tmp.float()
+
                         tmp = torch.quantile(torch.abs(noise_guidance_edit_tmp).flatten(start_dim=2), edit_threshold_c, dim=2, keepdim=False)
                         noise_guidance_edit_tmp = torch.where(
                             torch.abs(noise_guidance_edit_tmp) >= tmp[:, :, None, None]
@@ -567,6 +571,9 @@ class SemanticEditPipeline(DiffusionPipeline):
                     noise_guidance = noise_guidance + edit_guidance
 
                 noise_pred = noise_pred_uncond + noise_guidance
+
+                if latents_dtype not in [torch.float, torch.double]:
+                     noise_pred = noise_pred.to(torch.float16)
 
                 # compute the previous noisy sample x_t -> x_t-1
             latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
