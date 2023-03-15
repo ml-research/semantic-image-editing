@@ -10,7 +10,13 @@ An interactive demonstration is available in Colab and on Huggingface [![Open In
 ![Examples](./examples/teaser.png)
 
 ## Installation
-You can either clone the repository and install it locally by running
+SEGA is fully integrated in the ```diffusers``` library as ```SemanticStableDiffusionPipeline```. Just install diffusers to use it:
+
+```cmd
+pip install diffusers
+```
+
+Alternatively you can clone this repository and install it locally by running
 
 ```cmd
 git clone https://github.com/ml-research/semantic-image-editing.git
@@ -32,6 +38,15 @@ from semdiffusers import SemanticEditPipeline
 device='cuda'
 
 pipe = SemanticEditPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5",
+).to(device)
+```
+or load the corresponding pipeline in diffusers:
+
+```python 
+from diffusers import SemanticStableDiffusionPipeline
+device = 'cuda'
+pipe = SemanticStableDiffusionPipeline.from_pretrained(
     "runwayml/stable-diffusion-v1-5",
 ).to(device)
 ```
