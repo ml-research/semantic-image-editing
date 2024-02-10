@@ -81,7 +81,7 @@ If you like or use our work please cite us:
       title={SEGA: Instructing Diffusion using Semantic Dimensions}, 
       author={Manuel Brack and Felix Friedrich and Dominik Hintersdorf and Lukas Struppek and Patrick Schramowski and Kristian Kersting},
       year={2023},
-      journal={arXiv preprint arXiv:2301.12247}
+      journal={NeurIPS}
 }
 ```
 
